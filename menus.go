@@ -3,7 +3,7 @@
 
 // Site: https://mugomes.github.io
 
-package controls
+package main
 
 import (
 	"net/url"
@@ -29,7 +29,7 @@ func MainMenus(app fyne.App) *fyne.MainMenu {
 			app.OpenURL(sURL)
 		}),
 		fyne.NewMenuItem("Sobre", func() {
-
+			showAbout(app)
 		}),
 	)
 
