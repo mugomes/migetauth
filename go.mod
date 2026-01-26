@@ -4,7 +4,9 @@ go 1.25.5
 
 require (
 	fyne.io/fyne/v2 v2.7.2
+	github.com/mattn/go-sqlite3 v1.14.33
 	github.com/mugomes/mgsmartflow v1.1.0
+	golang.org/x/crypto v0.33.0
 )
 
 require (
