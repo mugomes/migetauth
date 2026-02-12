@@ -14,10 +14,11 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/mugomes/mgdialogbox"
 	"github.com/mugomes/mgsmartflow"
 )
 
-func (config *MiGetAuthConfig) showCreateAccount(a fyne.App, db *sql.DB) {
+func (config *MiGetAuthConfig) showCreateUser(a fyne.App, db *sql.DB, wMain fyne.Window) {
 	window := a.NewWindow("MiGetAuth")
 	window.SetFixedSize(true)
 	window.CenterOnScreen()
@@ -39,6 +40,13 @@ func (config *MiGetAuthConfig) showCreateAccount(a fyne.App, db *sql.DB) {
 	flow.AddRow(lblEmail)
 	flow.AddRow(txtEmail)
 
+	lblUsuario := widget.NewLabel("Usuário")
+	lblUsuario.TextStyle = fyne.TextStyle{Bold: true}
+	txtUsuario := widget.NewEntry()
+
+	flow.AddRow(lblUsuario)
+	flow.AddRow(txtUsuario)
+
 	lblSenha := widget.NewLabel("Senha")
 	lblSenha.TextStyle = fyne.TextStyle{Bold: true}
 	txtSenha := widget.NewPasswordEntry()
@@ -46,19 +54,39 @@ func (config *MiGetAuthConfig) showCreateAccount(a fyne.App, db *sql.DB) {
 	flow.AddRow(lblSenha)
 	flow.AddRow(txtSenha)
 
-	btnCreate := widget.NewButton("Criar Conta", func() {
-		config.sAccount = txtSenha.Text
-		err := controls.CreateUser(db, txtNome.Text, txtEmail.Text, txtSenha.Text)
-		if err != nil {
-			log.Fatal(err)
-		}
+	var confirmQuitApp bool = true
 
-		createCode()
-		window.Close()
+	btnCreate := widget.NewButton("Criar Conta", func() {
+		if txtNome.Text != "" && txtEmail.Text != "" && txtUsuario.Text != "" && txtSenha.Text != "" {
+			iduser, err := controls.CreateUser(db, txtNome.Text, txtEmail.Text, txtUsuario.Text, txtSenha.Text)
+			config.sIDUser = iduser
+			
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fyne.Do(func() {
+				wMain.Show()
+			})
+
+			createCode()
+			confirmQuitApp = false
+
+			window.Close()
+		} else {
+			mgdialogbox.NewAlert(a, "MiGetAuth", "Preencha todos os campos antes de continuar!", true, "Ok")
+		}
 	})
 
 	flow.AddRow(container.NewHBox(layout.NewSpacer(), btnCreate, layout.NewSpacer()))
 
 	window.SetContent(flow.Container)
+
+	window.SetOnClosed(func() {
+		if confirmQuitApp {
+			a.Quit()
+		}
+	})
+
 	window.Show()
 }
