@@ -10,12 +10,16 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
-	//"time"
+
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
+	// "fyne.io/fyne/v2/widget"
 
 	"github.com/mugomes/mgsmartflow"
 
@@ -27,11 +31,10 @@ const VERSION_APP string = "1.0.0"
 
 type MiGetAuthConfig struct {
 	dbFileName string
-	sAccount   string
+	sIDUser    int64
 }
 
-func getCode() string {
-	secret := ""
+func getCode(secret string) string {
 	code, err := c.GenerateTOTP(secret)
 
 	if err != nil {
@@ -42,57 +45,76 @@ func getCode() string {
 	return code
 }
 
-func initConfig(filename string, account string) *MiGetAuthConfig {
+func initConfig(filename string, iduser int64) *MiGetAuthConfig {
+	sDir := path.Dir(filename)
+	if !c.FileExists(sDir) {
+		os.Mkdir(sDir, os.ModePerm)
+	}
+
 	return &MiGetAuthConfig{
 		dbFileName: filename,
-		sAccount:   account,
+		sIDUser: iduser,
 	}
 }
 
-var pTempo *mgprogressbar.MGProgressBar
-var lblContaCodigo *canvas.Text
+var (
+	pTempo         *mgprogressbar.MGProgressBar
+	lblContaCodigo *canvas.Text
+
+	db  *sql.DB
+	err error
+)
 
 func createCode() {
-	// go (func() {
-	// 	tckTempo := time.NewTicker(1 * time.Second)
-	// 	defer tckTempo.Stop()
+	go (func() {
+		//accountExists, _ := c.AccountExists(db)
+		// if accountExists {
+			tckTempo := time.NewTicker(1 * time.Second)
+			defer tckTempo.Stop()
 
-	// 	sSeconds := 0
+			sSeconds := 0
 
-	// 	for range tckTempo.C {
-	// 		sSeconds++
+			for range tckTempo.C {
+				sSeconds++
 
-	// 		fyne.Do(func() {
-	// 			pTempo.SetValue(float64(sSeconds))
-	// 		})
+				fyne.Do(func() {
+					pTempo.SetValue(float64(sSeconds))
+				})
 
-	// 		if sSeconds == int(pTempo.Max) {
-	// 			sSeconds = 0
+				if sSeconds == int(pTempo.Max) {
+					sSeconds = 0
 
-	// 			fyne.Do(func() {
-	// 				lblContaCodigo.Text = getCode()
-	// 				lblContaCodigo.Refresh()
-	// 			})
-	// 		}
-	// 	}
-	// })()
+					fyne.Do(func() {
+						lblContaCodigo.Text = getCode("JBSWY3DPEHPK3PXP")
+						lblContaCodigo.Refresh()
+					})
+				}
+			}
+		// }
+	})()
 }
 
 func main() {
 	app := app.NewWithID("br.com.mugomes.migetauth")
 	app.Settings().SetTheme(&myDarkTheme{})
+
+	fyne.Do(func() {
+		sIcon := fyne.NewStaticResource("migetauth.png", resourceAppIconData)
+		app.SetIcon(sIcon)
+	})
+
 	window := app.NewWindow("MiGetAuth")
 	window.SetFixedSize(true)
 	window.CenterOnScreen()
-	window.Resize(fyne.NewSize(800, 600))
+	window.Resize(fyne.NewSize(800, 299))
 
 	flow := mgsmartflow.New()
 
 	window.SetMainMenu(MainMenus(app))
 
-	appConfig := initConfig(filepath.Join("data", "migetauth.db"), "")
+	appConfig := initConfig(filepath.Join("data", "migetauth.db"), 0)
 
-	lblContaCodigo = canvas.NewText(getCode(), color.White)
+	lblContaCodigo = canvas.NewText("", color.White)
 	lblContaCodigo.TextSize = 32
 	lblContaCodigo.Alignment = fyne.TextAlignCenter
 	lblContaNome := canvas.NewText("", color.White)
@@ -104,11 +126,16 @@ func main() {
 
 	pTempo = mgprogressbar.New()
 	pTempo.Min = 0
-	pTempo.Max = 15
+	pTempo.Max = 30
 	flow.AddRow(pTempo)
 
-	println(appConfig.dbFileName)
-	db, err := sql.Open("sqlite3", appConfig.dbFileName)
+	// widget.NewButtonWithIcon("", "", func() {
+
+	// })
+
+	window.SetContent(flow.Container)
+
+	db, err = sql.Open("sqlite3", appConfig.dbFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,11 +152,10 @@ func main() {
 	}
 
 	if !dbUserExists {
-		appConfig.showCreateAccount(app, db)
+		appConfig.showCreateUser(app, db, window)
 	} else {
-		createCode()
+		appConfig.showUserLogin(app, db, window)
 	}
 
-	window.SetContent(flow.Container)
-	window.ShowAndRun()
+	app.Run()
 }
