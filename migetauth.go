@@ -67,8 +67,8 @@ var (
 
 func createCode() {
 	go (func() {
-		//accountExists, _ := c.AccountExists(db)
-		// if accountExists {
+		accountExists, _ := c.AccountExists(db)
+		if accountExists {
 			tckTempo := time.NewTicker(1 * time.Second)
 			defer tckTempo.Stop()
 
@@ -90,7 +90,7 @@ func createCode() {
 					})
 				}
 			}
-		// }
+		}
 	})()
 }
 

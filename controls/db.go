@@ -21,6 +21,7 @@ func CreateTable(db *sql.DB) error {
 
 		`ALTER TABLE xht_usuarios ADD COLUMN nome TEXT;`,
 		`ALTER TABLE xht_usuarios ADD COLUMN email TEXT;`,
+		`ALTER TABLE xht_usuarios ADD COLUMN usuario TEXT;`,
 		`ALTER TABLE xht_usuarios ADD COLUMN senha BLOB;`,
 
 		// tabela contas
@@ -28,6 +29,7 @@ func CreateTable(db *sql.DB) error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT
 		);`,
 
+		`ALTER TABLE xht_contas ADD COLUMN idusuario INT;`,
 		`ALTER TABLE xht_contas ADD COLUMN nome TEXT;`,
 		`ALTER TABLE xht_contas ADD COLUMN codigo BLOB;`,
 	}
@@ -54,29 +56,62 @@ func isDuplicateColumnError(err error) bool {
 // Users
 func UserExists(db *sql.DB) (bool, error) {
 	var count int
-	err := db.QueryRow(`SELECT COUNT(*) FROM xht_usuarios`).Scan(&count)
+	err := db.QueryRow(`SELECT COUNT(*) FROM xht_usuarios LIMIT 0,1`).Scan(&count)
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func CreateUser(db *sql.DB, nome, email string, senha string) error {
+func CreateUser(db *sql.DB, nome, email, usuario, senha string) (int64,error) {
 	hash, err := HashPassword(senha)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	stmt, err := db.Prepare(`INSERT INTO xht_usuarios (nome, email, senha)
-		VALUES (?, ?, ?)`)
+	stmt, err := db.Prepare(`INSERT INTO xht_usuarios (nome, email, usuario, senha)
+		VALUES (?, ?, ?, ?)`)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(nome, email, hash)
+	query, err := stmt.Exec(nome, email, usuario, hash)
+	id, _ := query.LastInsertId()
 
-	return err
+	return id, err
+}
+
+func CheckUser(db *sql.DB, usuario, senha string) (bool, error) {
+	var sSenha string
+
+	stmt, err := db.Prepare(`SELECT senha FROM xht_usuarios WHERE usuario=?`)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(usuario).Scan(&sSenha)
+
+	if err != nil {
+		return false, err
+	}
+
+	if VerifyPassword([]byte(sSenha), senha) {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+// Contas
+func AccountExists(db *sql.DB) (bool, error) {
+	var count int
+	err := db.QueryRow(`SELECT COUNT(*) FROM xht_contas LIMIT 0,1`).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
