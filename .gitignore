@@ -3,3 +3,9 @@
 
 # pycache
 __pycache__/
+
+# pyinstaller
+build/
+dist/
+migetauth.spec
+compile
