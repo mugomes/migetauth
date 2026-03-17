@@ -3,10 +3,10 @@
 
 # Site: https://github.com/mugomes
 
-import threading, time
+import threading, time, webbrowser, frmAbout
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
-from tkinter import messagebox, simpledialog, ttk, PhotoImage
+from tkinter import messagebox, simpledialog, ttk, Menu, PhotoImage
 from core import *
 
 class AuthApp:
@@ -27,6 +27,26 @@ class AuthApp:
         self.setup_ui()
         self.load_accounts()
         self.update_token_loop()
+
+        barmenuMain = Menu(self.root)
+        self.root.config(menu=barmenuMain)
+
+        mnuAbout = Menu(barmenuMain, tearoff=0)
+        barmenuMain.add_cascade(label="Sobre", menu=mnuAbout)
+        mnuAbout.add_command(label="Verificar Atualizações", command=self.checkUpdate)
+        mnuAbout.add_separator()
+        mnuAbout.add_command(label="Apoie MiGetAuth", command=self.supportApp)
+        mnuAbout.add_separator()
+        mnuAbout.add_command(label="Sobre MiGetAuth", command=self.showAbout)
+
+    def checkUpdate(self):
+        webbrowser.open(url="https://github.com/mugomes/migetauth/releases")
+
+    def supportApp(self):
+        webbrowser.open(url="https://github.com/mugomes/migetauth")
+
+    def showAbout(self):
+        frmAbout.showWindow()
 
     def setup_ui(self):
         main_frame = tb.Frame(self.root)
