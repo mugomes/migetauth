@@ -24,6 +24,11 @@ O MiGetAuth tem como foco a simplicidade, transparência e liberdade.
 
 🧪 Comportamento determinístico e previsível, garantindo confiabilidade na geração dos códigos
 
+## 💙 Support
+
+- GitHub: https://github.com/sponsors/mugomes
+- More: https://mugomes.github.io/apoie.html
+
 ## 👤 Autor
 
 **Murilo Gomes Julio**
